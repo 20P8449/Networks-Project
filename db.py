@@ -45,7 +45,15 @@ class DB:
 
     def get_online_users(self):
         projection = {'_id': 0, 'username': 1}
-        return list(self.db.online_peers.find({}, projection))
+        online_users = list(self.db.online_peers.find({}, projection))
+
+        if online_users:
+            print("Online Users:")
+            for user in online_users:
+                print(user['username'])
+        else:
+            print("No users online.")
+
     # def list_online_users(self):
     #     online_users = []
     #     for user in online_users:

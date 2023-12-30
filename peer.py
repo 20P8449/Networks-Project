@@ -1,9 +1,12 @@
+import pdb
 from socket import *
 import threading
 import select
 import logging
 import hashlib
 from colorama import Fore
+
+from db import DB
 
 
 # Server side of peer
@@ -396,7 +399,8 @@ class peerMain:
                 # if choice is 6 and user is online, the user requests the list of online peers right now
                 # The user sends the request to the server and the server shall respond with a message containing the users
             elif choice == "5" and self.isOnline:
-                self.userList()
+                database = DB()
+                database.get_online_users()
 
                 # if choice is 4 and user is logged in, then user is logged out
                 # # and peer variables are set, and server and client sockets are closed
@@ -598,33 +602,54 @@ class peerMain:
         self.timer = threading.Timer(1, self.sendHelloMessage)
         self.timer.start()
 
-    def userList(self):
-        message = "users-list-request" + " "
-        self.tcpClientSocket.send(message.encode())
-        response = self.tcpClientSocket.recv(1024).decode()
-        if response.startswith("users-list"):
-            users = response[len("users-list"):].split('\n')
-            print("Online Users:\n")
-            if len(users) > 1:  # Check if there are users listed
-                for user in users[1:]:
-                    print(f"{Fore.RED}{user}" + ",")
-                print(f"{Fore.RESET}\n")
-            else:
-                print("\tNo users currently online")
-        else:
-            print("Unexpected response:", response)
-    # def get_online_users(self):
-    #     message = "ONLINE_LIST"
-    #     logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
+    # def userList(self):
+    #     message = "users-list-request" + " "
     #     self.tcpClientSocket.send(message.encode())
     #     response = self.tcpClientSocket.recv(1024).decode()
-    #     return str(response)
+    #     if response.startswith("users-list"):
+    #         users = response[len("users-list"):].split('\n')
+    #         print("Users after splitting:", users)
+    #         pdb.set_trace()
+    #
+    #         print("Online Users:\n")
+    #         if len(users) >= 1:  # Check if there are users listed
+    #             for user in users[1:]:
+    #                 print(f"{Fore.RED}{user}" + ",")
+    #             print(f"{Fore.RESET}\n")
+    #         else:
+    #             print("\tNo users currently online")
+    #     else:
+    #         print("Unexpected response:", response)
+    # def userList(self):
+    #     message = "users-list-request" + " "
+    #     self.tcpClientSocket.send(message.encode())
+    #     response = self.tcpClientSocket.recv(1024).decode()
+    #
+    #
+    #     if response.startswith("users-list"):
+    #         users = response[len("users-list"):].split('\n')
+    #         print("Users after splitting:", users)
+    #
+    #         if 'No users online' in users:
+    #             print("Online Users:\n")
+    #             for user in users[1:]:
+    #                 print(f"{Fore.RED}{user}" + ",")
+    #             print(f"{Fore.RESET}\n")
+    #         else:
+    #             print("Online Users:\n")
+    #             for user in users[1:]:
+    #                 print(f"{Fore.RED}{user}" + ",")
+    #             print(f"{Fore.RESET}\n")
+    #     else:
+    #         print("Unexpected response:", response)
 
     # def getOnlineusers(self):
     #     message = "LIST OF ONLINE USERS" + ' online'
     #     self.tcpClientSocket.send(message.encode())
     #     response = self.tcpClientSocket.recv(1024).decode()
     #     return ("Online Users: " + response)
+
+
 
     def listRooms(self, name):
         message = "get_users " + name
