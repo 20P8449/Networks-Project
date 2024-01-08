@@ -1,6 +1,8 @@
 import pdb
 from socket import *
 import threading
+
+import colorama
 import select
 import logging
 import hashlib
@@ -97,12 +99,6 @@ class PeerServer(threading.Thread):
                             self.connectedPeerIP = addr[0]
                             break
 
-
-                        # messageReceived = s.recv(1024).decode()
-                        # logs the received message
-                        # logging.info("Received from " + str(self.connectedPeerIP) + " -> " + str(messageReceived))
-                        # if message is a request message it means that this is the receiver side peer server
-                        # so evaluate the chat request
                         elif len(messageReceived) > 11 and messageReceived[:12] == "CHAT-REQUEST":
                             # text for proper input choices is printed however OK or REJECT is taken as input in main process of the peer
                             # if the socket that we received the data belongs to the peer that we are chatting with,
@@ -332,13 +328,12 @@ class peerMain:
                 choices = {
                     '1': f"{Fore.BLUE}Search for user{Fore.RESET}",
                     '2': f"{Fore.BLUE}Start a chat{Fore.RESET}",
-                    '3': f"{Fore.BLUE}Exit{Fore.RESET}",
-                    '4': f"{Fore.BLUE}Logout{Fore.RESET}",
-                    '5': f"{Fore.BLUE}Get Online Users{Fore.RESET}",
-                    '6': f"{Fore.BLUE}Create chatroom{Fore.RESET}",
-                    '7': f"{Fore.BLUE}Join a chatroom{Fore.RESET}",
-                    '8': F"{Fore.BLUE}Show the users of the chatroom{Fore.RESET}",
-                    '9': f"{Fore.BLUE}Leave{Fore.RESET}"
+                    # '3': f"{Fore.BLUE}Exit{Fore.RESET}",
+                    '3': f"{Fore.BLUE}Logout{Fore.RESET}",
+                    '4': f"{Fore.BLUE}Get Online Users{Fore.RESET}",
+                    '5': f"{Fore.BLUE}Create chatroom{Fore.RESET}",
+                    '6': f"{Fore.BLUE}Join a chatroom{Fore.RESET}",
+                    '7': F"{Fore.BLUE}Show the users of the chatroom{Fore.RESET}",
                 }
             choice = input("\n".join([f"{key}: {value}" for key, value in choices.items()]) + "\nEnter your choice: ")
 
@@ -396,15 +391,11 @@ class peerMain:
                     self.peerClient.start()
                     self.peerClient.join()
 
-                # if choice is 6 and user is online, the user requests the list of online peers right now
-                # The user sends the request to the server and the server shall respond with a message containing the users
-            elif choice == "5" and self.isOnline:
+            elif choice == "4" and self.isOnline:
                 database = DB()
                 database.get_online_users()
 
-                # if choice is 4 and user is logged in, then user is logged out
-                # # and peer variables are set, and server and client sockets are closed
-            elif choice == "4" and self.isOnline:
+            elif choice == "3" and self.isOnline:
                 self.logout(1)
                 self.isOnline = False
                 self.loginCredentials = (None, None)
@@ -415,14 +406,13 @@ class peerMain:
                 print(f"{Fore.RED}Logged out successfully{Fore.RESET}")
                 main = peerMain()
 
-                # if choice is 5 ,"Exit" process is done, peer will not be logged in & program is terminated
 
-            # if choice is 6, user is online, and the user is not already in a chatroom
-            elif choice == "6" and self.isOnline:
+            elif choice == "5" and self.isOnline:
                 name = input(f"{Fore.RED}Enter the name of the chatroom: {Fore.RESET}")
                 self.createChatroom(name, username)
+                print(f"Chatroom named {name} Created Successfully")
 
-            elif choice == "7" and self.isOnline:
+            elif choice == "6" and self.isOnline:
                 name = input(f"{Fore.RED}Enter the name of the chatroom: {Fore.RESET}")
                 self.joinchatRoom(name, username)
                 self.peerServer.isChatroomRequested = 1
@@ -449,27 +439,23 @@ class peerMain:
                         client_socket.close()
                     if message == ':q':
                         # self.peerServer.isChatroom = 0
-                        self.ExitRoom(name, username)
+                        self.LeaveRoom(name, username)
                         break
 
-            elif choice == "8" and self.isOnline:
+            elif choice == "7" and self.isOnline:
                 name = input(f"{Fore.RED}Enter chatroom name: {Fore.RESET}")
                 users = self.listRooms(name)
                 for user in users:
                     print(user)
-            elif choice == "9" and self.isOnline:
-                chatroomName = input(f"{Fore.RED}Enter the chatroom you want to leave: {Fore.RESET}")
-
-                self.ExitRoom(chatroomName, username)
-                print( username + " left the chatroom")
-
-            elif choice == "3":
-                self.logout(2)
 
 
-            # if this is the receiver side then it will get the prompt to accept an incoming request during the main loop
+            # elif choice == "3":
+            #     self.logout(2)
+
+
+            # if this is the receiver side then it will get the pro
             # that's why response is evaluated in main process not the server thread even though the prompt is printed by server
-            # if the response is ok then a client is created for this peer with the OK message and that's why it will directly
+            # if the response is ok then a client is created for this peer witmpt to accept an incoming request during the main looph the OK message and that's why it will directly
             # sent an OK message to the requesting side peer server and waits for the user input
             # main process waits for the client thread to finish its chat
             elif choice == "OK" and self.isOnline:
@@ -557,11 +543,8 @@ class peerMain:
             print(f"{Fore.GREEN}Chatroom created {Fore.RESET}")
         elif response == "chatroom-exist":
             print(f"{Fore.GREEN}Chatroom already existed , choose another one{Fore.RESET}")
-    # function for searching an online user
+
     def findUser(self, username):
-        # a search message is composed and sent to registry
-        # custom value is returned according to each response
-        # to this search message
         message = "SEARCHUSER " + username
         logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
         self.tcpClientSocket.send(message.encode())
@@ -602,55 +585,6 @@ class peerMain:
         self.timer = threading.Timer(1, self.sendHelloMessage)
         self.timer.start()
 
-    # def userList(self):
-    #     message = "users-list-request" + " "
-    #     self.tcpClientSocket.send(message.encode())
-    #     response = self.tcpClientSocket.recv(1024).decode()
-    #     if response.startswith("users-list"):
-    #         users = response[len("users-list"):].split('\n')
-    #         print("Users after splitting:", users)
-    #         pdb.set_trace()
-    #
-    #         print("Online Users:\n")
-    #         if len(users) >= 1:  # Check if there are users listed
-    #             for user in users[1:]:
-    #                 print(f"{Fore.RED}{user}" + ",")
-    #             print(f"{Fore.RESET}\n")
-    #         else:
-    #             print("\tNo users currently online")
-    #     else:
-    #         print("Unexpected response:", response)
-    # def userList(self):
-    #     message = "users-list-request" + " "
-    #     self.tcpClientSocket.send(message.encode())
-    #     response = self.tcpClientSocket.recv(1024).decode()
-    #
-    #
-    #     if response.startswith("users-list"):
-    #         users = response[len("users-list"):].split('\n')
-    #         print("Users after splitting:", users)
-    #
-    #         if 'No users online' in users:
-    #             print("Online Users:\n")
-    #             for user in users[1:]:
-    #                 print(f"{Fore.RED}{user}" + ",")
-    #             print(f"{Fore.RESET}\n")
-    #         else:
-    #             print("Online Users:\n")
-    #             for user in users[1:]:
-    #                 print(f"{Fore.RED}{user}" + ",")
-    #             print(f"{Fore.RESET}\n")
-    #     else:
-    #         print("Unexpected response:", response)
-
-    # def getOnlineusers(self):
-    #     message = "LIST OF ONLINE USERS" + ' online'
-    #     self.tcpClientSocket.send(message.encode())
-    #     response = self.tcpClientSocket.recv(1024).decode()
-    #     return ("Online Users: " + response)
-
-
-
     def listRooms(self, name):
         message = "get_users " + name
         logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
@@ -659,13 +593,26 @@ class peerMain:
         logging.info("Received from " + self.registryName + " -> " + "".join(response))
         return response[1:]
 
-    def ExitRoom(self, name, admin):
-        message = "ExitRoom " + name+ " " + admin
+    def LeaveRoom(self, chatroomName, username):
+        message = "LeaveRoom " + chatroomName + " " + username
         logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode()
         logging.info("Received from " + self.registryName + " -> " + response)
-        print(response)
+        return response
+
+    # def exitChatRoom(self, username, ChatRoom_Name):
+    #     if self.ChatRoomUsers != None:
+    #         for user in self.ChatRoomUsers:
+    #             self.initiate_ChatRoom(user, f"{colorama.Fore.RED}User {username} has left the room")
+    #     message = "Exit_CHAT_ROOM " + username + " " + ChatRoom_Name
+    #     self.tcpClientSocket.send(message.encode())
+    #     response = self.tcpClientSocket.recv(1024).decode().split()
+    #     if response[0] == "Chat_Room_Exit":
+    #         print(f"{Fore.RED} You have left the chat room")
+    #         self.inChatroom = False
+    #
+    #         return 0
 
     def FindchatRoom(self, name):
         message = "findROOM " + name

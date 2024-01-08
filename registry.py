@@ -154,9 +154,6 @@ class ClientThread(threading.Thread):
                     else:
                         response = "users-list\nNo users online"
                         self.tcpClientSocket.send(response.encode())
-                # elif message[0] == "LIST OF ONLINE USERS":
-                #     response = list(tcpThreads.keys())
-                #     self.tcpClientSocket.send(str(response).encode())
                 elif message[0] == "CREATE-CHAT-ROOM":
 
                     name = message[1]
@@ -211,22 +208,14 @@ class ClientThread(threading.Thread):
                     # Send the response over the TCP socket
 
                     self.tcpClientSocket.send(response.encode())
-                elif message[0] == "ExitRoom":
-                    db.leave_room( name, admin)
-                    print(self.ip + ":" + str(self.port) + " is leaving chatroom")
-                    print(f"chatroom name = {name} and user is leaving = {admin}")
-                    # Construct a response with the list of users in the chatroom
-                    response = "Left room " + name + ":"
-                    # for user in room_details:
-                    #     response += user + ":"
 
-                    # Send the response to the user
+
+                elif message[0] == "Exit_CHAT_ROOM":
+                    response = "Chat_Room_Exit"
+                    db.remove_ChatRoom_user(message[2], message[1])
                     self.tcpClientSocket.send(response.encode())
 
-                    # Close the TCP client socket and break out of the loop
-                    self.tcpClientSocket.close()
-                    self.udpServer.timer.cancel()
-                    break
+
                 else:
                     self.tcpClientSocket.close()
                     break
@@ -263,7 +252,7 @@ class UDPServer(threading.Thread):
     # if hello message is not received before timeout
     # then peer is disconnected
     def waitHelloMessage(self):
-        if self.username is not None:
+        if self.username != None:
             db.user_logout(self.username)
             if self.username in tcpThreads:
                 del tcpThreads[self.username]
@@ -345,7 +334,7 @@ while inputs:
             newThread = ClientThread(addr[0], addr[1], tcpClientSocket)
             newThread.start()
         # if the message received comes to the udp socket
-        elif s is udpSocket:
+        elif s == udpSocket:
             # received the incoming udp message and parses it
             message, clientAddress = s.recvfrom(1024)
             message = message.decode().split()

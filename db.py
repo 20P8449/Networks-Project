@@ -25,8 +25,6 @@ class DB:
             return True
         else:
             return False
-    # def is_account_online(self, username):
-    #     return len(list(self.db.online_peers.find({"username": username}))) > 0
 
     def user_login(self, username, ip, port):
         online_peer = {
@@ -54,12 +52,6 @@ class DB:
         else:
             print("No users online.")
 
-    # def list_online_users(self):
-    #     online_users = []
-    #     for user in online_users:
-    #         if user.isOnline:
-    #             online_users.append(user.username)
-    #     return online_users
     def chatroom_exist(self, chatroomName):
         chatroom_exists = self.db.chatrooms.find_one({'chatroomName': chatroomName})
         if chatroom_exists is not None:
@@ -100,3 +92,20 @@ class DB:
                 {"username": RoomCreator}, {"$push": {"ChatRooms": chatroomName}}
             )
             self.db.chatrooms.insert_one(chatroom)
+
+    def leave_chat_room(self, room_name, username):
+            # Update the document to remove the username from the "Members" array
+            self.db.chat_rooms.update_one(
+                {"room-name": room_name},
+                {"$pull": {"Members": username}}
+            )
+
+
+
+
+
+    def remove_ChatRoom_user(self, ChatRoom_Name, username):
+            self.db.ChatRooms.update_one(
+                {"ChatRoom_Name": ChatRoom_Name},
+                {"$pull": {"Participants": username}}
+            )
